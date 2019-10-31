@@ -14,7 +14,7 @@
 
     /**
      * Form handler for forms submitted with <perch:form app="pipit_stripe"></perch:form>
-     * 
+     *
      * @param object $SubmittedForm     PerchAPI_SubmittedForm
      */
     function pipit_stripe_form_handler($SubmittedForm) {
@@ -58,14 +58,14 @@
 
 
 
-    
+
     /**
-     * verify webhook signature and fires a Perch event 
-     * 
+     * verify webhook signature and fires a Perch event
+     *
      * @param JSON $payload             Event JSON sent by Stripe
      * @param string $sig_header        Webhook signature send by Stripe
      * @param string $endpoint_secret   Webhook endpoint secret
-     * 
+     *
      * @return object
      */
     function pipit_stripe_webhook_event($payload, $sig_header, $endpoint_secret = '') {
@@ -117,9 +117,9 @@
 
     /**
      * Retrieve a single customer from Stripe
-     * 
+     *
      * @param string $customerID
-     * 
+     *
      * @return object
      */
     function pipit_stripe_get_customer($customerID) {
@@ -136,15 +136,15 @@
 
 
 
-    
+
 
 
 
     /**
      * Fetch customers from Stripe
-     * 
+     *
      * @param array $opts   Options array for filtering. Refer to Stripe documentation for available options.
-     * 
+     *
      * @return object
      */
     function pipit_stripe_get_customers($opts=array()) {
@@ -167,9 +167,9 @@
 
     /**
      * Get a customer's subscriptions
-     * 
+     *
      * @param string $email     Customer's email address
-     * 
+     *
      * @return object|boolean
      */
     function pipit_stripe_get_customer_subscriptions($email) {
@@ -187,15 +187,15 @@
 
 
 
-    
+
 
 
     /**
      * Update a Stripe subscription
-     * 
+     *
      * @param string $subID             The subscription's ID
      * @param boolean $opts             Option arrays. Refer to Stripe documentation for the available options.
-     * 
+     *
      * @return object                   If a charge is required for the update and the charge fails, this call throws an error, and the subscription update does not go into effect.
      */
     function pipit_stripe_update_subscription($subID, $opts) {
@@ -213,13 +213,13 @@
 
 
 
-    
+
     /**
      * Cancel a Stripe subscription
-     * 
+     *
      * @param string $subID             The subscription's ID
      * @param boolean $cancel_at_end    Whether to cancel at end of subscription or immediately
-     * 
+     *
      */
     function pipit_stripe_cancel_subscription($subID, $cancel_at_end = true) {
         if(!defined('PIPIT_STRIPE_SECRET_KEY')) {
@@ -229,7 +229,7 @@
 
         \Stripe\Stripe::setApiKey(PIPIT_STRIPE_SECRET_KEY);
 
-        
+
         if($cancel_at_end) {
             return \Stripe\Subscription::update($subID, ['cancel_at_period_end' => true,]);
         } else {
@@ -246,11 +246,11 @@
 
     /**
      * Cancel a customer's subscription given a plan ID
-     * 
+     *
      * @param string $planID            The plan's ID
      * @param boolean $cancel_at_end    Whether to cancel at end of subscription or immediately
      * @param string $email             The customer's email address
-     * 
+     *
      * @return object|boolean
      */
     function pipit_stripe_cancel_customer_plan($planID, $cancel_at_end = true, $email = 'member') {
@@ -285,21 +285,21 @@
         }
 
         return false;
-        
+
     }
 
 
-    
+
 
 
 
 
     /**
      * Get the active plans for the given API key
-     * 
+     *
      * @param array $opts
      * @param boolean $return_html
-     * 
+     *
      */
     function pipit_stripe_plans($opts=[], $return_html=false) {
         $Plans = new PipitStripe_Plans();
@@ -403,11 +403,11 @@
 
     /**
      * Get plans for a specific product
-     * 
+     *
      * @param string $productID
      * @param array $opts
      * @param boolean $return_html
-     * 
+     *
      */
     function pipit_stripe_plans_for($productID, $opts = [], $return_html = false) {
         $Plans = new PipitStripe_Plans();
@@ -459,16 +459,16 @@
 
     /**
      * Output the active products for the given API key
-     * 
+     *
      * @param array $opts
      * @param boolean $return_html
-     * 
+     *
      */
     function pipit_stripe_products($opts=[], $return_html=false) {
         $Products = new PipitStripe_Products();
         $Util = new PipitStripe_Util();
         $products = $Products->get();
-        
+
         $default_opts = [
             'template' => 'products/list.html',
         ];
@@ -484,16 +484,16 @@
 
     /**
      * Output a single product
-     * 
+     *
      * @param array $opts
      * @param boolean $return_html
-     * 
+     *
      */
     function pipit_stripe_product($productID, $opts=[], $return_html=false) {
         $Products = new PipitStripe_Products();
         $Util = new PipitStripe_Util();
         $products = $Products->get_product($productID);
-        
+
         $default_opts = [
             'template' => 'products/detail.html',
         ];
@@ -509,12 +509,12 @@
 
     /**
      * Output an unsubscribe Perch Form for a single plan or subscription
-     * 
+     *
      * @param string $planID
      * @param string $subscriptionID
      * @param array $opts
      * @param boolean $return_html
-     * 
+     *
      */
     function pipit_stripe_unsubscribe_form($planID = '', $subscriptionID = '', $opts=[], $return_html=false) {
         $Util = new PipitStripe_Util();
@@ -524,7 +524,7 @@
             'return_url' => SITE_URL . '/unsubscribe/success',
             'customer_email' => 'member',
         ];
-        
+
         $opts = array_merge($default_opts, $opts);
 
         // data for templating
@@ -542,7 +542,69 @@
             PerchUtil::debug('Member is not logged in', 'error');
             return false;
         }
-        
+
 
         return $Util->template($default_opts, $opts, $data, $return_html);
+    }
+
+
+
+
+
+    /**
+     * Preview upgrade of a Stripe subscription
+     *
+     * @param string $subID               The subscription's ID
+     * @param string $newPlanID           The Stripe ID of the new plan
+     * @param string $customerID          The customer's Stripe ID
+     * @param timestamp $proration_date   The date to use for proration calculations
+     * @param array $opts                 Option arrays. Refer to Stripe documentation for the available options.
+     *
+     * @return integer                    Returns the cost of the upgrade.  Proration is calculated by the second so the cost may vary depending on the proration date.
+     */
+    function pipit_stripe_preview_upgrade($subID, $newPlanID, $customerID, $proration_date=false, $opts=[]) {
+        if(!defined('PIPIT_STRIPE_SECRET_KEY')) {
+            PerchUtil::debug('Stripe secret key not set', 'error');
+            return false;
+        }
+
+        \Stripe\Stripe::setApiKey(PIPIT_STRIPE_SECRET_KEY);
+
+        $subscription = \Stripe\Subscription::retrieve($subID);
+
+        if(!$subscription) {
+            PerchUtil::debug('Stripe subscription not found', 'error');
+            return false;
+        }
+
+        $items = [
+            [
+                'id' => $subscription->items->data[0]->id,
+                'plan' => $newPlanID
+            ]
+        ];
+
+        $proration_date = !$proration_date ? time() : $proration_date;
+
+        $default_opts = [
+            'subscription_prorate' => true,
+            'customer' => $customerID,
+            'subscription' => $subID,
+            'subscription_items' => $items,
+            'subscription_proration_date' => $proration_date
+        ];
+
+        $opts = array_merge($default_opts, $opts);
+
+        $invoice = \Stripe\Invoice::upcoming($opts);
+
+        $cost = 0;
+
+        foreach ($invoice->lines->data as $line) {
+            if ($line->period->start == $proration_date) {
+                $cost += $line->amount;
+            }
+        }
+
+        return $cost;
     }
