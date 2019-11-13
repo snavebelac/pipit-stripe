@@ -608,3 +608,32 @@
 
         return $cost;
     }
+
+    /**
+     * Create an invoice
+     *
+     * @param string $customerID          The customer's Stripe ID
+     * @param array $opts                 Option arrays. Refer to Stripe documentation for the available options.
+     *
+     * @return Stripe invoice object      Returns the invoice object.
+     */
+    function pipit_stripe_create_invoice($customerID, $opts = []) {
+        if(!defined('PIPIT_STRIPE_SECRET_KEY')) {
+            PerchUtil::debug('Stripe secret key not set', 'error');
+            return false;
+        }
+
+        \Stripe\Stripe::setApiKey(PIPIT_STRIPE_SECRET_KEY);
+
+        $default_opts = [
+            'customer' => $customerID,
+            'auto_advance' => true,
+            'collection_method' => 'charge_automatically'
+        ];
+
+        $opts = array_merge($default_opts, $opts);
+
+        $invoice = \Stripe\Invoice::create($opts);
+
+        return $invoice;
+    }
